@@ -22,41 +22,45 @@ function VRMSEReward:__init(module, scale, areaScale, criterion)
    self.gradInput = {torch.Tensor()}
 end
 
-function VRMSEReward:updateOutput(inputTable, target) --forward
-print('VRMSEReward:updateOutput içindesin')
-print('1. Giriş = inputTable',inputTable)
-print('2. Giriş = target',#target) -- target=highRes
+function VRMSEReward:updateOutput(inputTable, target)
    assert(torch.type(inputTable) == 'table')
-   local map = inputTable[2] -- batchsize*1*128*128 (adamınkinde) visited_map_next
-   local input = inputTable[1]-- batchsize*3*128*128 image_next
-   
-   print('map=inputTable[2]==>',#map) -- visited_map_next
-   print('input=inputTable[1]==>',#input)--image_next
+   local map = inputTable[2]
+   local input = inputTable[1]
 
+   -- amac ne olabilir 
+   -- input ile target birbirine benzer olması lazım
+   -- buna göre ödül verecek
+   
    -- reward = mse
    self.reward = input:clone()
-   self.reward:add(-1, target):pow(2)
-   assert(self.reward:dim() == 4)  -- burada 4 oluşu batch*3*128*128 yani 4 boy olusu
-   for i = 4,2,-1 do
+   self.reward:add(-1, target):pow(2)--target -1 ile carptı. input ile topladı
+   -- karesini aldı. mse yi yaptı ama daha bölmedi
+                                  
+   assert(self.reward:dim() == 5)
+   for i = 5,2,-1 do
       self.reward = self.reward:sum(i)
    end
-   self.reward:resize(self.reward:size(1))
-   self.reward:div(-input:size(3)*input:size(4))
-   self.reward:add(4) -- pixel ~ [-1, 1], thus error^2 are <= 4
-   local area = map:sum(4):sum(3):sum(2):div(opt.highResSize[1]*opt.highResSize[2])-- tüm pikselleri topladı 128*128 e böldü tensör elde etti
-   area = area:view(-1) -- 1x1x1x2 boyutunu direkt 2 yaptı
-   print('area',area)
-   self.reward:add(self.areaScale,area) -- 4 = area reward scale
-
-   self.output = self.errorC:forward(input,target)--errorC=MSECriterion  //  image_next ile highRes MSE yapıo
+   -- batchSize kadar kanalları topladı. batchSize kadar fark elde etti. mse nin üstünü elde etti.2x1x1x1
    
+   self.reward:resize(self.reward:size(1)) -- batchSize kadar çıktı 
+   self.reward:div(-input:size(3)*input:size(4)) -- fark/M*N yaptı
+   self.reward:add(4) -- pixel ~ [-1, 1], thus error^2 are <= 4 MSE diyebiliriz
+   --print('self.reward:add(4)',self.reward)
+   
+   local area = map:sum(4):sum(3):sum(2):div(opt.highResSize[1]*opt.highResSize[2]) -- tum map toplanip/128*128 bolunuyor
+   area = area:view(-1)
+   --print('area',area)
+   self.reward:add(self.areaScale,area) -- 4 = area reward scale
+   -- areascale ile area çarptı + reward yaptı
+	print('BURADAAAAAAAAAAAAAAA')
+   self.output = self.errorC:forward(input,target) -- mse bu
+   print(self.output)
    return self.output
 end
 
-function VRMSEReward:updateGradInput(inputTable, target) --backward
-print('VRMSEReward:updateGradInput içindesin')
-   local input = inputTable[1] -- loc
-   local baseline =inputTable[3] -- viseted map
+function VRMSEReward:updateGradInput(inputTable, target)
+   local input = inputTable[1]
+   local baseline =inputTable[3]
    
    -- reduce variance of reward using baseline
    self.vrReward = self.vrReward or self.reward.new()
@@ -69,7 +73,7 @@ print('VRMSEReward:updateGradInput içindesin')
    self.module:reinforce(self.vrReward)  
    
    -- zero gradInput (this criterion has no gradInput for class pred)
-   self.gradInput[1]:resizeAs(input):zero() --gradInput = torch.Tensor()
+   self.gradInput[1]:resizeAs(input):zero()
    self.gradInput[1] = self.gradInput[1]
    -- self.gradInput[1] = self.errorC:backward(input,target)
 
