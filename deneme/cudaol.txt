@@ -1,0 +1,74 @@
+gpu_info = !nvidia-smi
+gpu_info = '\n'.join(gpu_info)
+if gpu_info.find('failed') >= 0:
+  print('Not connected to a GPU')
+else:
+  print(gpu_info)
+
+from psutil import virtual_memory
+ram_gb = virtual_memory().total / 1e9
+print('Your runtime has {:.1f} gigabytes of available RAM\n'.format(ram_gb))
+
+if ram_gb < 20:
+  print('Not using a high-RAM runtime')
+else:
+  print('You are using a high-RAM runtime!')
+
+!git config --global url.https://github.com/.insteadOf git://github.com/
+
+!git clone https://github.com/vecihiprograming/volcon4
+
+mv /content/volcon4 /content/facehallrnn
+
+!wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=18P6RV8xu-Ocs0moUSprf2W1Oxw04z3GW' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=18P6RV8xu-Ocs0moUSprf2W1Oxw04z3GW" -O torch.rar && rm -rf /tmp/cookies.txt
+
+%%capture
+!unrar x -Y "/content/torch.rar" "/content/facehallrnn/torch/"
+
+mv /content/facehallrnn/torch/torch2/ /content/facehallrnn/torchx
+
+mv /content/facehallrnn/torch/bb.sh /content/facehallrnn/torchx
+
+rm -r /content/facehallrnn/torch
+
+mv /content/facehallrnn/torchx /content/facehallrnn/torch
+
+%%capture
+!unrar x -Y "/content/facehallrnn/rnn.rar" "/content/facehallrnn/rnn/"
+
+mv /content/facehallrnn/rnn/rnn2 /content/facehallrnn/rnnx
+
+rm -r /content/facehallrnn/rnn
+
+mv /content/facehallrnn/rnnx /content/facehallrnn/rnn
+
+!cp /content/drive/MyDrive/videos.rar /content/facehallrnn/deneme
+
+%%capture
+!unrar x -Y "/content/facehallrnn/deneme/videos.rar" "/content/facehallrnn/deneme"
+
+%%capture
+import os
+!bash /content/facehallrnn/torch/install-deps
+
+!chmod -R +x /content/facehallrnn/torch
+
+cd /content/facehallrnn
+
+!./facehallrnn/torch/bb.sh
+
+!./facehallrnn/torch/install/bin/torch-activate
+
+cd facehallrnn/torch/install/bin
+
+!source ./torch-activate
+
+!./luarocks install tds
+
+cd /content/facehallrnn/deneme/
+
+mv /content/facehallrnn/deneme/train.txt /content/facehallrnn/deneme/videos/IJBC_128_96_new
+
+mv /content/facehallrnn/deneme/text.txt /content/facehallrnn/deneme/videos/IJBC_128_96_new
+
+!./../torch/install/bin/th colab.lua
