@@ -95,24 +95,24 @@ function dataset:EAsample(quantity)
    assert(quantity)
    local dataTable = {}
    local extraTable = {}
-   local dataTable2 = {}
-   local extraTable2 = {}   
+   -- local dataTable2 = {}
+   -- local extraTable2 = {}   
    for i=1,quantity do
       local idx = torch.random(1, #self.data)
       local data_path = self.data[idx]--klasör
 	  --print(data_path)
 
       local out = self:EAtrainHook(data_path)
-	  local out2 = self:BBtrainHook(data_path)
+	-- local out2 = self:BBtrainHook(data_path)
 	  --print(out)
       table.insert(dataTable, out)
-      table.insert(dataTable2, out2)
+      -- table.insert(dataTable2, out2)
       table.insert(extraTable, self.data[idx])
-      table.insert(extraTable2, self.data[idx])
+      -- table.insert(extraTable2, self.data[idx])
    end
    
    --print(self:EAtableToOutput(dataTable))
-   return self:EAtableToOutput(dataTable,extraTable),self:tableToOutput(dataTable2,extraTable2)
+   return self:EAtableToOutput(dataTable,extraTable)
 end
 
 -- gets data in a certain range
